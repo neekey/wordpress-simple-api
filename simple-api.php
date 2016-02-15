@@ -11,7 +11,7 @@ include_once 'controller.php';
 
 $simpleApiController = new simple_api_controller();
 
-$simpleApiBase = 'api3';
+$simpleApiBase = 'sa';
 
 function simple_api_init() {
     global $wp_rewrite;

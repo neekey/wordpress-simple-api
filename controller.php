@@ -16,61 +16,59 @@ class simple_api_controller {
      * @link <https://developer.wordpress.org/reference/classes/wp_query/>
      */
     public $query_parameters = array(
-        'author',
-        'author_name',
-        'author__id',
-        'author__not_in',
-        'cat',
-        'category_name',
-        'category__and',
-        'category__in',
-        'category__not_in',
-        'tag',
-        'tag_id',
-        'tag__and',
-        'tag__in',
-        'tag__not_in',
-        'tag_slug__and',
-        'tag_slug__in',
-        's',
-        'p',
-        'name',
-        'page_id',
-        'pagename',
-        'post_parent',
-        'post_parent__in',
-        'post_parent__not_in',
-        'post__in',
-        'post__not_in',
-        'post_name__in',
-        'post_type',
-        'post_status',
-        'nopaging',
-        'posts_per_page',
-        'posts_per_archive_page',
-        'offset',
-        'paged',
-        'page',
-        'ignore_sticky_posts',
-        'order',
-        'orderby',
-        'year',
-        'monthnum',
-        'w',
-        'day',
-        'hour',
-        'minute',
-        'second',
-        'm',
-        'meta_key',
-        'meta_value',
-        'meta_value_num',
-        'meta_compare'
+        'sa_author',
+        'sa_author_name',
+        'sa_author__id',
+        'sa_author__not_in',
+        'sa_cat',
+        'sa_category_name',
+        'sa_category__and',
+        'sa_category__in',
+        'sa_category__not_in',
+        'sa_tag',
+        'sa_tag_id',
+        'sa_tag__and',
+        'sa_tag__in',
+        'sa_tag__not_in',
+        'sa_tag_slug__and',
+        'sa_tag_slug__in',
+        'sa_s',
+        'sa_p',
+        'sa_name',
+        'sa_page_id',
+        'sa_pagename',
+        'sa_post_parent',
+        'sa_post_parent__in',
+        'sa_post_parent__not_in',
+        'sa_post__in',
+        'sa_post__not_in',
+        'sa_post_name__in',
+        'sa_post_type',
+        'sa_post_status',
+        'sa_nopaging',
+        'sa_posts_per_page',
+        'sa_posts_per_archive_page',
+        'sa_offset',
+        'sa_paged',
+        'sa_page',
+        'sa_ignore_sticky_posts',
+        'sa_order',
+        'sa_orderby',
+        'sa_year',
+        'sa_monthnum',
+        'sa_w',
+        'sa_day',
+        'sa_hour',
+        'sa_minute',
+        'sa_second',
+        'sa_m',
+        'sa_meta_key',
+        'sa_meta_value',
+        'sa_meta_value_num',
+        'sa_meta_compare'
 
     );
 
-    // todo 目前虽然这样直接把参数放进来的方式很简单,但是本身某些参数名和wordpress本身的参数规则有冲突,比如 page_id,
-    // 需要看看是否有办法覆盖掉wordpress的这些规则
     function get_posts( $args ){
         $wpArgs = array();
 
@@ -86,7 +84,7 @@ class simple_api_controller {
             }
         }
 
-        $wpArgs[ 'posts_per_page' ] = isset( $wpArgs[ 'posts_per_page' ] ) ? $wpArgs[ 'posts_per_page' ] : 20;
+        $wpArgs[ 'sa_posts_per_page' ] = isset( $wpArgs[ 'sa_posts_per_page' ] ) ? $wpArgs[ 'sa_posts_per_page' ] : 20;
 
         $query = new WP_Query( $wpArgs );
         $resultPosts = array();
@@ -96,7 +94,7 @@ class simple_api_controller {
                 $query->the_post();
                 $wpPost = $query->post;
 
-                if( $_REQUEST[ 'get_brief_posts' ] ){
+                if( $args[ 'sa_get_brief_posts' ] ){
                     $resultPosts[] = new simple_api_post_basic( $wpPost );
                 }
                 else {
@@ -129,7 +127,7 @@ class simple_api_controller {
     }
 
     function ctrl_get_post(){
-        $result = $this->get_posts( array( 'p' => $_REQUEST[ 'post_id' ] ) );
+        $result = $this->get_posts( array( 'sa_p' => $_REQUEST[ 'sa_post_id' ] ) );
 
         if( count( $result[ 'posts' ] ) > 0 ){
             return new simple_api_response( $result[ 'posts' ][0], 200 );
@@ -140,7 +138,7 @@ class simple_api_controller {
     }
 
     function ctrl_get_page(){
-        $result = $this->get_posts( array( 'page_id' => $_REQUEST[ 'p_id' ] ) );
+        $result = $this->get_posts( array( 'sa_page_id' => $_REQUEST[ 'sa_page_id' ] ) );
 
         if( count( $result[ 'posts' ] ) > 0 ){
             return new simple_api_response( $result[ 'posts' ][0], 200 );
@@ -152,8 +150,23 @@ class simple_api_controller {
 
     function ctrl_get_comments(){
 
-        $result = get_comments( array( 'post_id' => $_REQUEST[ 'post_id' ] ) );
+        $result = get_comments( array( 'sa_post_id' => $_REQUEST[ 'sa_post_id' ] ) );
 
         return new simple_api_response( $result, 200 );
+    }
+
+    function ctrl_insert_comment(){
+        $comment = array(
+            'comment_approved' => is_user_member_of_blog() ? 1 : 0,
+            'comment_author' => $_REQUEST[ 'comment_author' ],
+            'comment_author_email' => $_REQUEST[ 'comment_author_email' ],
+            'comment_author_url' => $_REQUEST[ 'comment_author_url' ],
+            'comment_author_ip' => $_SERVER['REMOTE_ADDR'],
+            'comment_content' => $_REQUEST[ 'comment_content' ],
+            'comment_post_ID' => $_REQUEST[ 'comment_post_ID' ]
+        );
+
+        $commentId = wp_insert_comment( $comment );
+        return new simple_api_response( get_comment( $commentId ), 200 );
     }
 }
